@@ -502,7 +502,7 @@ func NewGenerator(state *State) func() string {
 			col1, col2 := RandColumnPairWithSameType(group)
 			return And(
 				Str(col1.name),
-				cmpSymbol,
+			 	Str("="),
 				Str(col2.name),
 			)
 		})
