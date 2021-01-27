@@ -1,0 +1,629 @@
+
+select col_14 from tbl_2 where col_11 in ( '1996-04-17' )  ;
+Performance with cluster index: 
+avg:458.217950, sum:45821.795000, p80:410.591000, p90:426.198000, p95:484.464000, max:5567.504000, min:0.000000
+Performance wout cluster index: 
+avg:520.531380, sum:52053.138000, p80:432.471000, p90:466.631000, p95:572.307000, max:11732.520000, min:0.000000
+with_cluster_index_plan: 
+Batch_Point_Get_1	1.00	root	table:tbl_2, index:idx_11(col_11)	keep order:false, desc:false
+wout_cluster_index_plan: 
+Batch_Point_Get_1	1.00	root	table:tbl_2, index:idx_11(col_11)	keep order:false, desc:false
+
+select tbl_2.col_13 , tbl_4.col_23 from tbl_2 join tbl_4 ;
+Performance with cluster index: 
+avg:15878.322470, sum:1587832.247000, p80:16417.582000, p90:17061.239000, p95:17401.532000, max:23860.052000, min:0.000000
+Performance wout cluster index: 
+avg:16871.025540, sum:1687102.554000, p80:17298.663000, p90:18013.171000, p95:18541.003000, max:20244.449000, min:0.000000
+with_cluster_index_plan: 
+Projection_8	31416.00	root		with_cluster_index.tbl_2.col_13, with_cluster_index.tbl_4.col_23
+└─HashJoin_10	31416.00	root		CARTESIAN inner join
+  ├─TableReader_12(Build)	8.00	root		data:TableFullScan_11
+  │ └─TableFullScan_11	8.00	cop[tikv]	table:tbl_4	keep order:false
+  └─IndexReader_16(Probe)	3927.00	root		index:IndexFullScan_15
+    └─IndexFullScan_15	3927.00	cop[tikv]	table:tbl_2, index:idx_11(col_11)	keep order:false
+wout_cluster_index_plan: 
+Projection_8	15708.00	root		wout_cluster_index.tbl_2.col_13, wout_cluster_index.tbl_4.col_23
+└─HashJoin_10	15708.00	root		CARTESIAN inner join
+  ├─TableReader_12(Build)	4.00	root		data:TableFullScan_11
+  │ └─TableFullScan_11	4.00	cop[tikv]	table:tbl_4	keep order:false
+  └─IndexReader_16(Probe)	3927.00	root		index:IndexFullScan_15
+    └─IndexFullScan_15	3927.00	cop[tikv]	table:tbl_2, index:PRIMARY(col_13)	keep order:false
+
+select tbl_1.col_7, tbl_1.col_37 , tbl_4.* from tbl_1 right join tbl_4 on col_7 = col_23 and col_7 = col_23 and col_9 = col_5 and col_7 = col_23 or col_5 = col_9 and col_7 = col_23 and col_23 = col_7 ;
+Error 1054: Unknown column 'tbl_1.col_37' in 'field list'
+
+select * from tbl_1 where col_8 in ( 'Wb' )  ;
+Performance with cluster index: 
+avg:3416.023460, sum:341602.346000, p80:3512.347000, p90:3595.055000, p95:3739.847000, max:3904.061000, min:0.000000
+Performance wout cluster index: 
+avg:4498.634890, sum:449863.489000, p80:4590.058000, p90:4670.974000, p95:4728.516000, max:5758.984000, min:0.000000
+with_cluster_index_plan: 
+TableReader_7	1.00	root		data:Selection_6
+└─Selection_6	1.00	cop[tikv]		eq(with_cluster_index.tbl_1.col_8, "Wb")
+  └─TableFullScan_5	4998.00	cop[tikv]	table:tbl_1	keep order:false
+wout_cluster_index_plan: 
+TableReader_7	5.00	root		data:Selection_6
+└─Selection_6	5.00	cop[tikv]		eq(wout_cluster_index.tbl_1.col_8, "Wb")
+  └─TableFullScan_5	4998.00	cop[tikv]	table:tbl_1	keep order:false
+
+select tbl_6.* , tbl_5.col_26 from tbl_6 right join tbl_5 on col_31 = col_25 ;
+Error 1146: Table 'with_cluster_index.tbl_6' doesn't exist
+
+select tbl_2.* , tbl_3.col_18, tbl_3.col_16 from tbl_2 left join tbl_3 on col_13 = col_16 ;
+Performance with cluster index: 
+avg:11302.903250, sum:1130290.325000, p80:12217.459000, p90:13039.252000, p95:14415.651000, max:15420.211000, min:0.000000
+Performance wout cluster index: 
+avg:11789.603170, sum:1178960.317000, p80:12396.789000, p90:13571.511000, p95:14399.479000, max:21123.711000, min:0.000000
+with_cluster_index_plan: 
+Projection_13	4154.72	root		with_cluster_index.tbl_2.col_10, with_cluster_index.tbl_2.col_11, with_cluster_index.tbl_2.col_12, with_cluster_index.tbl_2.col_13, with_cluster_index.tbl_2.col_14, with_cluster_index.tbl_3.col_18, with_cluster_index.tbl_3.col_16
+└─HashJoin_15	4154.72	root		left outer join, equal:[eq(with_cluster_index.tbl_2.col_13, with_cluster_index.tbl_3.col_16)]
+  ├─TableReader_17(Build)	3927.00	root		data:TableFullScan_16
+  │ └─TableFullScan_16	3927.00	cop[tikv]	table:tbl_2	keep order:false
+  └─PartitionUnion_18(Probe)	5055.94	root		
+    ├─TableReader_21	838.16	root		data:Selection_20
+    │ └─Selection_20	838.16	cop[tikv]		not(isnull(with_cluster_index.tbl_3.col_16))
+    │   └─TableFullScan_19	839.00	cop[tikv]	table:tbl_3, partition:p0	keep order:false
+    ├─TableReader_24	871.13	root		data:Selection_23
+    │ └─Selection_23	871.13	cop[tikv]		not(isnull(with_cluster_index.tbl_3.col_16))
+    │   └─TableFullScan_22	872.00	cop[tikv]	table:tbl_3, partition:p1	keep order:false
+    ├─TableReader_27	866.13	root		data:Selection_26
+    │ └─Selection_26	866.13	cop[tikv]		not(isnull(with_cluster_index.tbl_3.col_16))
+    │   └─TableFullScan_25	867.00	cop[tikv]	table:tbl_3, partition:p2	keep order:false
+    ├─TableReader_30	855.14	root		data:Selection_29
+    │ └─Selection_29	855.14	cop[tikv]		not(isnull(with_cluster_index.tbl_3.col_16))
+    │   └─TableFullScan_28	856.00	cop[tikv]	table:tbl_3, partition:p3	keep order:false
+    ├─TableReader_33	795.20	root		data:Selection_32
+    │ └─Selection_32	795.20	cop[tikv]		not(isnull(with_cluster_index.tbl_3.col_16))
+    │   └─TableFullScan_31	796.00	cop[tikv]	table:tbl_3, partition:p4	keep order:false
+    └─TableReader_36	830.17	root		data:Selection_35
+      └─Selection_35	830.17	cop[tikv]		not(isnull(with_cluster_index.tbl_3.col_16))
+        └─TableFullScan_34	831.00	cop[tikv]	table:tbl_3, partition:p5	keep order:false
+wout_cluster_index_plan: 
+Projection_13	4154.68	root		wout_cluster_index.tbl_2.col_10, wout_cluster_index.tbl_2.col_11, wout_cluster_index.tbl_2.col_12, wout_cluster_index.tbl_2.col_13, wout_cluster_index.tbl_2.col_14, wout_cluster_index.tbl_3.col_18, wout_cluster_index.tbl_3.col_16
+└─HashJoin_15	4154.68	root		left outer join, equal:[eq(wout_cluster_index.tbl_2.col_13, wout_cluster_index.tbl_3.col_16)]
+  ├─TableReader_17(Build)	3927.00	root		data:TableFullScan_16
+  │ └─TableFullScan_16	3927.00	cop[tikv]	table:tbl_2	keep order:false
+  └─PartitionUnion_18(Probe)	4995.00	root		
+    ├─TableReader_21	826.17	root		data:Selection_20
+    │ └─Selection_20	826.17	cop[tikv]		not(isnull(wout_cluster_index.tbl_3.col_16))
+    │   └─TableFullScan_19	827.00	cop[tikv]	table:tbl_3, partition:p0	keep order:false
+    ├─TableReader_24	865.13	root		data:Selection_23
+    │ └─Selection_23	865.13	cop[tikv]		not(isnull(wout_cluster_index.tbl_3.col_16))
+    │   └─TableFullScan_22	866.00	cop[tikv]	table:tbl_3, partition:p1	keep order:false
+    ├─TableReader_27	852.15	root		data:Selection_26
+    │ └─Selection_26	852.15	cop[tikv]		not(isnull(wout_cluster_index.tbl_3.col_16))
+    │   └─TableFullScan_25	853.00	cop[tikv]	table:tbl_3, partition:p2	keep order:false
+    ├─TableReader_30	842.16	root		data:Selection_29
+    │ └─Selection_29	842.16	cop[tikv]		not(isnull(wout_cluster_index.tbl_3.col_16))
+    │   └─TableFullScan_28	843.00	cop[tikv]	table:tbl_3, partition:p3	keep order:false
+    ├─TableReader_33	788.21	root		data:Selection_32
+    │ └─Selection_32	788.21	cop[tikv]		not(isnull(wout_cluster_index.tbl_3.col_16))
+    │   └─TableFullScan_31	789.00	cop[tikv]	table:tbl_3, partition:p4	keep order:false
+    └─TableReader_36	821.18	root		data:Selection_35
+      └─Selection_35	821.18	cop[tikv]		not(isnull(wout_cluster_index.tbl_3.col_16))
+        └─TableFullScan_34	822.00	cop[tikv]	table:tbl_3, partition:p5	keep order:false
+
+select count(*) from tbl_0 where col_2 <= 375.88  ;
+Performance with cluster index: 
+avg:2810.552680, sum:281055.268000, p80:2929.243000, p90:3023.042000, p95:3097.299000, max:3273.572000, min:0.000000
+Performance wout cluster index: 
+avg:3144.926390, sum:314492.639000, p80:3263.688000, p90:3375.227000, p95:3452.747000, max:5421.071000, min:0.000000
+with_cluster_index_plan: 
+StreamAgg_27	1.00	root		funcs:count(Column#8)->Column#6
+└─TableReader_28	1.00	root		data:StreamAgg_9
+  └─StreamAgg_9	1.00	cop[tikv]		funcs:count(1)->Column#8
+    └─Selection_24	2407.00	cop[tikv]		le(with_cluster_index.tbl_0.col_2, 375.88)
+      └─TableFullScan_23	4833.00	cop[tikv]	table:tbl_0	keep order:false
+wout_cluster_index_plan: 
+StreamAgg_41	1.00	root		funcs:count(Column#42)->Column#7
+└─IndexReader_42	1.00	root		index:StreamAgg_9
+  └─StreamAgg_9	1.00	cop[tikv]		funcs:count(1)->Column#42
+    └─Selection_38	1606.17	cop[tikv]		le(wout_cluster_index.tbl_0.col_2, 375.88)
+      └─IndexFullScan_37	4833.00	cop[tikv]	table:tbl_0, index:idx_1(col_1, col_2, col_0, col_3)	keep order:false
+
+select col_26,col_27 from tbl_5 where col_30 in ( 34.96 , 35.85 , 4.9615 )  ;
+Error 1146: Table 'with_cluster_index.tbl_5' doesn't exist
+
+select * from tbl_2 where col_10 <> 698.9  ;
+Performance with cluster index: 
+avg:8851.250950, sum:885125.095000, p80:8915.508000, p90:9423.369000, p95:9949.583000, max:11568.953000, min:0.000000
+Performance wout cluster index: 
+avg:9409.217590, sum:940921.759000, p80:9484.179000, p90:10003.032000, p95:10327.011000, max:12462.855000, min:0.000000
+with_cluster_index_plan: 
+TableReader_7	2614.07	root		data:Selection_6
+└─Selection_6	2614.07	cop[tikv]		ne(with_cluster_index.tbl_2.col_10, 698.9)
+  └─TableFullScan_5	3927.00	cop[tikv]	table:tbl_2	keep order:false
+wout_cluster_index_plan: 
+TableReader_7	2614.07	root		data:Selection_6
+└─Selection_6	2614.07	cop[tikv]		ne(wout_cluster_index.tbl_2.col_10, 698.9)
+  └─TableFullScan_5	3927.00	cop[tikv]	table:tbl_2	keep order:false
+
+select sum( col_27 ) from tbl_5 where col_25 <= ''  ;
+Error 1146: Table 'with_cluster_index.tbl_5' doesn't exist
+
+select tbl_4.col_24 , tbl_5.col_30, tbl_5.col_29, tbl_5.col_25, tbl_5.col_27, tbl_5.col_28 from tbl_4 join tbl_5 ;
+Error 1146: Table 'with_cluster_index.tbl_5' doesn't exist
+
+select count(*) from tbl_5 where col_26 in ( 7033 , 102 , 9860 , 10581 , 2257 , 8019 , 7534 , 12256 , 7224 , 8334 , 8398 , 8722 , 453 , 5262 )  ;
+Error 1146: Table 'with_cluster_index.tbl_5' doesn't exist
+
+select * from tbl_6 where col_31 in ( '' , '' , '' , '' , '' , '' )  ;
+Error 1146: Table 'with_cluster_index.tbl_6' doesn't exist
+
+select tbl_4.col_23 , tbl_4.col_21, tbl_4.col_20 from tbl_4 right join tbl_4 on col_20 = col_20 ;
+Error 1066: Not unique table/alias: 'tbl_4'
+
+select sum( col_20 ) from tbl_4 where col_20 in ( null , 2957989710 , 2881211721 , null , 781490544 , 276685019 , 715075338 )  ;
+Performance with cluster index: 
+avg:1061.024050, sum:106102.405000, p80:1113.754000, p90:1128.714000, p95:1181.902000, max:1409.026000, min:0.000000
+Performance wout cluster index: 
+avg:1323.246730, sum:132324.673000, p80:1353.715000, p90:1382.751000, p95:1415.503000, max:1851.389000, min:0.000000
+with_cluster_index_plan: 
+StreamAgg_10	1.00	root		funcs:sum(Column#9)->Column#6
+└─Projection_20	0.04	root		cast(with_cluster_index.tbl_4.col_20, decimal(31,0) BINARY)->Column#9
+  └─TableReader_17	0.04	root		data:Selection_16
+    └─Selection_16	0.04	cop[tikv]		in(with_cluster_index.tbl_4.col_20, NULL, 2957989710, 2881211721, NULL, 781490544, 276685019, 715075338)
+      └─TableFullScan_15	8.00	cop[tikv]	table:tbl_4	keep order:false
+wout_cluster_index_plan: 
+StreamAgg_10	1.00	root		funcs:sum(Column#10)->Column#7
+└─Projection_20	0.02	root		cast(wout_cluster_index.tbl_4.col_20, decimal(31,0) BINARY)->Column#10
+  └─TableReader_17	0.02	root		data:Selection_16
+    └─Selection_16	0.02	cop[tikv]		in(wout_cluster_index.tbl_4.col_20, NULL, 2957989710, 2881211721, NULL, 781490544, 276685019, 715075338)
+      └─TableFullScan_15	4.00	cop[tikv]	table:tbl_4	keep order:false
+
+select tbl_5.col_30, tbl_5.col_26 , tbl_1.* from tbl_5 join tbl_1 on col_5 = col_9 or col_9 = col_5 ;
+Error 1146: Table 'with_cluster_index.tbl_5' doesn't exist
+
+select tbl_2.col_12 , tbl_3.* from tbl_2 join tbl_3 on col_12 = col_40 ;
+Error 1054: Unknown column 'col_40' in 'on clause'
+
+select count(*) from tbl_6 where col_36 < 932707.5  ;
+Error 1146: Table 'with_cluster_index.tbl_6' doesn't exist
+
+select col_26 from tbl_5 where col_30 > 33.9167  ;
+Error 1146: Table 'with_cluster_index.tbl_5' doesn't exist
+
+select col_8 from tbl_1 where col_8 > 'yDOBYB'  ;
+Performance with cluster index: 
+avg:2823.899590, sum:282389.959000, p80:2891.114000, p90:2949.973000, p95:3006.469000, max:4818.614000, min:0.000000
+Performance wout cluster index: 
+avg:3903.784800, sum:390378.480000, p80:4028.458000, p90:4101.294000, p95:4171.755000, max:4304.188000, min:0.000000
+with_cluster_index_plan: 
+Projection_4	144.26	root		with_cluster_index.tbl_1.col_8
+└─TableReader_7	144.26	root		data:Selection_6
+  └─Selection_6	144.26	cop[tikv]		gt(with_cluster_index.tbl_1.col_8, "yDOBYB")
+    └─TableFullScan_5	4998.00	cop[tikv]	table:tbl_1	keep order:false
+wout_cluster_index_plan: 
+TableReader_7	202.32	root		data:Selection_6
+└─Selection_6	202.32	cop[tikv]		gt(wout_cluster_index.tbl_1.col_8, "yDOBYB")
+  └─TableFullScan_5	4998.00	cop[tikv]	table:tbl_1	keep order:false
+
+select tbl_1.* , tbl_5.* from tbl_1 right join tbl_5 on col_9 = col_5 ;
+Error 1146: Table 'with_cluster_index.tbl_5' doesn't exist
+
+select count(*) from tbl_2 where col_10 in ( 0.798 , 9.4 )  ;
+Performance with cluster index: 
+avg:2715.951270, sum:271595.127000, p80:2759.995000, p90:2924.439000, p95:3005.637000, max:13309.859000, min:0.000000
+Performance wout cluster index: 
+avg:3321.464130, sum:332146.413000, p80:3423.785000, p90:3589.334000, p95:3790.895000, max:5355.357000, min:0.000000
+with_cluster_index_plan: 
+StreamAgg_20	1.00	root		funcs:count(Column#8)->Column#6
+└─TableReader_21	1.00	root		data:StreamAgg_9
+  └─StreamAgg_9	1.00	cop[tikv]		funcs:count(1)->Column#8
+    └─Selection_19	3.00	cop[tikv]		in(with_cluster_index.tbl_2.col_10, 0.798, 9.4)
+      └─TableFullScan_18	3927.00	cop[tikv]	table:tbl_2	keep order:false
+wout_cluster_index_plan: 
+StreamAgg_20	1.00	root		funcs:count(Column#9)->Column#7
+└─TableReader_21	1.00	root		data:StreamAgg_9
+  └─StreamAgg_9	1.00	cop[tikv]		funcs:count(1)->Column#9
+    └─Selection_19	3.00	cop[tikv]		in(wout_cluster_index.tbl_2.col_10, 0.798, 9.4)
+      └─TableFullScan_18	3927.00	cop[tikv]	table:tbl_2	keep order:false
+
+select tbl_4.* , tbl_4.col_22, tbl_4.col_46 from tbl_4 right join tbl_4 on col_20 = col_20 ;
+Error 1066: Not unique table/alias: 'tbl_4'
+
+select count(*) from tbl_3 where col_40 != 'KGfdHXUdKxrolRcy'  ;
+Error 1054: Unknown column 'col_40' in 'where clause'
+
+select * from tbl_3 where col_40 < 'ruhUhHsC'  ;
+Error 1054: Unknown column 'col_40' in 'where clause'
+
+select sum( col_20 ) from tbl_4 where col_22 = 'Bob'  ;
+Performance with cluster index: 
+avg:1027.809090, sum:102780.909000, p80:1060.542000, p90:1096.102000, p95:1198.072000, max:1475.325000, min:0.000000
+Performance wout cluster index: 
+avg:1346.468000, sum:134646.800000, p80:1363.823000, p90:1395.631000, p95:1513.118000, max:3188.851000, min:0.000000
+with_cluster_index_plan: 
+StreamAgg_7	1.00	root		funcs:sum(Column#7)->Column#6
+└─Projection_14	6.40	root		cast(with_cluster_index.tbl_4.col_20, decimal(31,0) BINARY)->Column#7
+  └─Selection_11	6.40	root		eq(with_cluster_index.tbl_4.col_22, "Bob")
+    └─TableReader_13	8.00	root		data:TableFullScan_12
+      └─TableFullScan_12	8.00	cop[tikv]	table:tbl_4	keep order:false
+wout_cluster_index_plan: 
+StreamAgg_7	1.00	root		funcs:sum(Column#8)->Column#7
+└─Projection_14	3.20	root		cast(wout_cluster_index.tbl_4.col_20, decimal(31,0) BINARY)->Column#8
+  └─Selection_11	3.20	root		eq(wout_cluster_index.tbl_4.col_22, "Bob")
+    └─TableReader_13	4.00	root		data:TableFullScan_12
+      └─TableFullScan_12	4.00	cop[tikv]	table:tbl_4	keep order:false
+
+select tbl_1.col_7 , tbl_1.col_6, tbl_1.col_7 from tbl_1 join tbl_1 on col_8 = col_8 and col_7 = col_7 ;
+Error 1066: Not unique table/alias: 'tbl_1'
+
+select tbl_0.* , tbl_0.col_1 from tbl_0 right join tbl_0 on col_1 = col_1 or col_1 = col_1 and col_1 = col_1 ;
+Error 1066: Not unique table/alias: 'tbl_0'
+
+select tbl_2.col_11 , tbl_3.* from tbl_2 left join tbl_3 on col_12 = col_40 ;
+Error 1054: Unknown column 'col_40' in 'on clause'
+
+select tbl_2.col_11 , tbl_3.col_50 from tbl_2 join tbl_3 on col_40 = col_12 ;
+Error 1054: Unknown column 'col_40' in 'on clause'
+
+select count(*) from tbl_0 where col_55 in ( '' , '' , '' )  ;
+Error 1054: Unknown column 'col_55' in 'where clause'
+
+select tbl_2.col_12 , tbl_0.col_55, tbl_0.col_1 from tbl_2 right join tbl_0 on col_1 = col_11 ;
+Error 1054: Unknown column 'tbl_0.col_55' in 'field list'
+
+select count(*) from tbl_5 where col_28 in ( 'aFsYhMbdewilxM' )  ;
+Error 1146: Table 'with_cluster_index.tbl_5' doesn't exist
+
+select count(*) from tbl_1 where col_7 < '2010-08-05'  ;
+Performance with cluster index: 
+avg:3715.758100, sum:371575.810000, p80:3819.160000, p90:3888.786000, p95:4029.886000, max:4258.741000, min:0.000000
+Performance wout cluster index: 
+avg:2364.718510, sum:236471.851000, p80:2501.077000, p90:2641.476000, p95:2810.539000, max:3322.554000, min:0.000000
+with_cluster_index_plan: 
+StreamAgg_32	1.00	root		funcs:count(Column#13)->Column#6
+└─TableReader_33	1.00	root		data:StreamAgg_9
+  └─StreamAgg_9	1.00	cop[tikv]		funcs:count(1)->Column#13
+    └─Selection_31	3027.51	cop[tikv]		lt(with_cluster_index.tbl_1.col_7, 2010-08-05 00:00:00.000000)
+      └─TableFullScan_30	4998.00	cop[tikv]	table:tbl_1	keep order:false
+wout_cluster_index_plan: 
+StreamAgg_21	1.00	root		funcs:count(Column#24)->Column#7
+└─IndexReader_22	1.00	root		index:StreamAgg_9
+  └─StreamAgg_9	1.00	cop[tikv]		funcs:count(1)->Column#24
+    └─IndexRangeScan_19	3027.51	cop[tikv]	table:tbl_1, index:idx_5(col_7, col_6, col_9)	range:[-inf,2010-08-05 00:00:00), keep order:false
+
+select sum( col_58 ) from tbl_2 where col_58 > 0  ;
+Error 1054: Unknown column 'col_58' in 'where clause'
+
+select tbl_1.* , tbl_1.col_6, tbl_1.col_54, tbl_1.col_9, tbl_1.col_41 from tbl_1 left join tbl_1 on col_9 = col_9 and col_8 = col_8 ;
+Error 1066: Not unique table/alias: 'tbl_1'
+
+select tbl_0.col_4, tbl_0.col_59, tbl_0.col_1 , tbl_3.col_48, tbl_3.col_40 from tbl_0 join tbl_3 ;
+Error 1054: Unknown column 'tbl_0.col_59' in 'field list'
+
+select tbl_1.* , tbl_6.col_39 from tbl_1 right join tbl_6 on col_49 = col_6 ;
+Error 1146: Table 'with_cluster_index.tbl_6' doesn't exist
+
+select col_4 from tbl_0 where col_1 <= '2016-06-17'  ;
+Performance with cluster index: 
+avg:2860.484650, sum:286048.465000, p80:2939.055000, p90:3040.591000, p95:3195.211000, max:4012.497000, min:0.000000
+Performance wout cluster index: 
+avg:2785.769630, sum:278576.963000, p80:2863.434000, p90:2927.733000, p95:3042.096000, max:4738.606000, min:0.000000
+with_cluster_index_plan: 
+Projection_4	3379.92	root		with_cluster_index.tbl_0.col_4
+└─TableReader_6	4224.90	root		data:TableRangeScan_5
+  └─TableRangeScan_5	4224.90	cop[tikv]	table:tbl_0	range:[-inf,2016-06-17 00:00:00], keep order:false
+wout_cluster_index_plan: 
+Projection_4	3379.92	root		wout_cluster_index.tbl_0.col_4
+└─IndexReader_8	4224.90	root		index:IndexRangeScan_7
+  └─IndexRangeScan_7	4224.90	cop[tikv]	table:tbl_0, index:idx_2(col_1, col_3, col_4)	range:[-inf,2016-06-17 00:00:00], keep order:false
+
+select col_20,col_22,col_23 from tbl_4 where col_46 in ( 0 )  ;
+Error 1054: Unknown column 'col_46' in 'where clause'
+
+select tbl_4.col_22, tbl_4.col_46, tbl_4.col_21 , tbl_1.* from tbl_4 right join tbl_1 on col_20 = col_46 or col_46 = col_20 ;
+Error 1054: Unknown column 'col_46' in 'on clause'
+
+select count(*) from tbl_0 where col_1 in ( '2021-12-06' )  ;
+Performance with cluster index: 
+avg:551.424730, sum:55142.473000, p80:587.793000, p90:624.751000, p95:654.402000, max:830.567000, min:0.000000
+Performance wout cluster index: 
+avg:537.178250, sum:53717.825000, p80:527.005000, p90:569.845000, p95:849.147000, max:1881.768000, min:0.000000
+with_cluster_index_plan: 
+StreamAgg_21	1.00	root		funcs:count(Column#8)->Column#6
+└─IndexReader_22	1.00	root		index:StreamAgg_9
+  └─StreamAgg_9	1.00	cop[tikv]		funcs:count(1)->Column#8
+    └─IndexRangeScan_20	3.00	cop[tikv]	table:tbl_0, index:idx_2(col_1, col_3, col_4)	range:[2021-12-06 00:00:00,2021-12-06 00:00:00], keep order:false
+wout_cluster_index_plan: 
+StreamAgg_25	1.00	root		funcs:count(Column#36)->Column#7
+└─IndexReader_26	1.00	root		index:StreamAgg_9
+  └─StreamAgg_9	1.00	cop[tikv]		funcs:count(1)->Column#36
+    └─IndexRangeScan_24	3.00	cop[tikv]	table:tbl_0, index:idx_2(col_1, col_3, col_4)	range:[2021-12-06 00:00:00,2021-12-06 00:00:00], keep order:false
+
+select * from tbl_1 where col_7 in ( '2033-06-22' , '2019-01-12' , '1997-03-19' , '1988-04-02' , '1995-10-09' , '2036-02-28' , '2015-11-02' , '1982-11-03' )  ;
+Performance with cluster index: 
+avg:1359.396880, sum:135939.688000, p80:1380.729000, p90:1444.328000, p95:1484.295000, max:3089.994000, min:0.000000
+Performance wout cluster index: 
+avg:1196.344620, sum:119634.462000, p80:1209.774000, p90:1334.972000, p95:1735.683000, max:4072.838000, min:0.000000
+with_cluster_index_plan: 
+IndexLookUp_10	14.00	root		
+├─IndexRangeScan_8(Build)	14.00	cop[tikv]	table:tbl_1, index:idx_5(col_7, col_6, col_9)	range:[1982-11-03 00:00:00,1982-11-03 00:00:00], [1988-04-02 00:00:00,1988-04-02 00:00:00], [1995-10-09 00:00:00,1995-10-09 00:00:00], [1997-03-19 00:00:00,1997-03-19 00:00:00], [2015-11-02 00:00:00,2015-11-02 00:00:00], [2019-01-12 00:00:00,2019-01-12 00:00:00], [2033-06-22 00:00:00,2033-06-22 00:00:00], [2036-02-28 00:00:00,2036-02-28 00:00:00], keep order:false
+└─TableRowIDScan_9(Probe)	14.00	cop[tikv]	table:tbl_1	keep order:false
+wout_cluster_index_plan: 
+IndexLookUp_10	14.00	root		
+├─IndexRangeScan_8(Build)	14.00	cop[tikv]	table:tbl_1, index:idx_5(col_7, col_6, col_9)	range:[1982-11-03 00:00:00,1982-11-03 00:00:00], [1988-04-02 00:00:00,1988-04-02 00:00:00], [1995-10-09 00:00:00,1995-10-09 00:00:00], [1997-03-19 00:00:00,1997-03-19 00:00:00], [2015-11-02 00:00:00,2015-11-02 00:00:00], [2019-01-12 00:00:00,2019-01-12 00:00:00], [2033-06-22 00:00:00,2033-06-22 00:00:00], [2036-02-28 00:00:00,2036-02-28 00:00:00], keep order:false
+└─TableRowIDScan_9(Probe)	14.00	cop[tikv]	table:tbl_1	keep order:false
+
+select tbl_6.col_42 , tbl_0.col_4, tbl_0.col_62, tbl_0.col_59 from tbl_6 join tbl_0 on col_62 = col_32 or col_62 = col_32 or col_62 = col_32 and col_62 = col_32 ;
+Error 1146: Table 'with_cluster_index.tbl_6' doesn't exist
+
+select tbl_4.* , tbl_6.* from tbl_4 join tbl_6 on col_46 = col_20 ;
+Error 1146: Table 'with_cluster_index.tbl_6' doesn't exist
+
+select tbl_0.* , tbl_1.col_41 from tbl_0 join tbl_1 on col_4 = col_9 ;
+Error 1054: Unknown column 'tbl_1.col_41' in 'field list'
+
+select tbl_0.col_62 , tbl_3.col_40 from tbl_0 right join tbl_3 on col_48 = col_62 or col_62 = col_48 and col_48 = col_62 ;
+Error 1054: Unknown column 'col_48' in 'on clause'
+
+select tbl_5.* , tbl_0.* from tbl_5 right join tbl_0 on col_62 = col_26 ;
+Error 1146: Table 'with_cluster_index.tbl_5' doesn't exist
+
+select count(*) from tbl_4 where col_23 in ( '1983-07-05' , '2021-07-18' )  ;
+Performance with cluster index: 
+avg:1057.309960, sum:105730.996000, p80:1101.984000, p90:1144.195000, p95:1238.869000, max:1499.586000, min:0.000000
+Performance wout cluster index: 
+avg:1321.443320, sum:132144.332000, p80:1357.969000, p90:1389.810000, p95:1444.867000, max:2028.175000, min:0.000000
+with_cluster_index_plan: 
+StreamAgg_10	1.00	root		funcs:count(1)->Column#6
+└─TableReader_17	0.02	root		data:Selection_16
+  └─Selection_16	0.02	cop[tikv]		or(eq(with_cluster_index.tbl_4.col_23, 1983-07-05 00:00:00.000000), eq(with_cluster_index.tbl_4.col_23, 2021-07-18 00:00:00.000000))
+    └─TableFullScan_15	8.00	cop[tikv]	table:tbl_4	keep order:false
+wout_cluster_index_plan: 
+StreamAgg_10	1.00	root		funcs:count(1)->Column#7
+└─TableReader_17	0.01	root		data:Selection_16
+  └─Selection_16	0.01	cop[tikv]		or(eq(wout_cluster_index.tbl_4.col_23, 1983-07-05 00:00:00.000000), eq(wout_cluster_index.tbl_4.col_23, 2021-07-18 00:00:00.000000))
+    └─TableFullScan_15	4.00	cop[tikv]	table:tbl_4	keep order:false
+
+select sum( col_4 ) from tbl_0 where col_59 <> ''  ;
+Error 1054: Unknown column 'col_59' in 'where clause'
+
+select tbl_4.col_21, tbl_4.col_20 , tbl_1.col_41 from tbl_4 join tbl_1 on col_46 = col_20 ;
+Error 1054: Unknown column 'col_46' in 'on clause'
+
+select count(*) from tbl_6 where col_63 = '2009-11-05'  ;
+Error 1146: Table 'with_cluster_index.tbl_6' doesn't exist
+
+select tbl_6.col_60 , tbl_3.* from tbl_6 join tbl_3 on col_63 = col_66 ;
+Error 1146: Table 'with_cluster_index.tbl_6' doesn't exist
+
+select sum( col_49 ) from tbl_6 where col_57 in ( '2033-03-01' )  ;
+Error 1146: Table 'with_cluster_index.tbl_6' doesn't exist
+
+select * from tbl_4 where col_20 >= 706570701  ;
+Performance with cluster index: 
+avg:1094.763730, sum:109476.373000, p80:1060.463000, p90:1094.745000, p95:1221.961000, max:6803.197000, min:0.000000
+Performance wout cluster index: 
+avg:1276.647480, sum:127664.748000, p80:1336.062000, p90:1366.341000, p95:1387.530000, max:1457.585000, min:0.000000
+with_cluster_index_plan: 
+TableReader_7	8.00	root		data:Selection_6
+└─Selection_6	8.00	cop[tikv]		ge(with_cluster_index.tbl_4.col_20, 706570701)
+  └─TableFullScan_5	8.00	cop[tikv]	table:tbl_4	keep order:false
+wout_cluster_index_plan: 
+TableReader_7	4.00	root		data:Selection_6
+└─Selection_6	4.00	cop[tikv]		ge(wout_cluster_index.tbl_4.col_20, 706570701)
+  └─TableFullScan_5	4.00	cop[tikv]	table:tbl_4	keep order:false
+
+select tbl_1.col_7, tbl_1.col_45, tbl_1.col_41 , tbl_0.* from tbl_1 join tbl_0 on col_5 = col_72 ;
+Error 1054: Unknown column 'col_72' in 'on clause'
+
+select tbl_0.col_59 , tbl_5.* from tbl_0 join tbl_5 on col_72 = col_4 ;
+Error 1146: Table 'with_cluster_index.tbl_5' doesn't exist
+
+select sum( col_58 ) from tbl_2 where col_70 = 'Alice'  ;
+Error 1054: Unknown column 'col_70' in 'where clause'
+
+select * from tbl_3 where col_73 = 0  ;
+Error 1054: Unknown column 'col_73' in 'where clause'
+
+select sum( col_27 ) from tbl_5 where col_30 in ( 184875.3238 , 82.4 , 6.77 , 0.7 , 54.65 , 4668.041 )  ;
+Error 1146: Table 'with_cluster_index.tbl_5' doesn't exist
+
+select sum( col_71 ) from tbl_3 where col_66 = '2030-09-23'  ;
+Error 1054: Unknown column 'col_66' in 'where clause'
+
+select col_21 from tbl_4 where col_67 in ( '1989-07-25' , '2027-03-31' , '2000-01-01' )  ;
+Error 1054: Unknown column 'col_67' in 'where clause'
+
+select count(*) from tbl_3 where col_16 in ( '2026-10-10' , '2032-11-09' , '2015-08-02' )  ;
+Performance with cluster index: 
+avg:2045.572610, sum:204557.261000, p80:1829.206000, p90:2028.708000, p95:5104.672000, max:8479.221000, min:0.000000
+Performance wout cluster index: 
+avg:2211.032280, sum:221103.228000, p80:2164.388000, p90:2235.626000, p95:3555.623000, max:9669.311000, min:0.000000
+with_cluster_index_plan: 
+HashAgg_21	1.00	root		funcs:count(Column#8)->Column#7
+└─PartitionUnion_22	6.00	root		
+  ├─StreamAgg_27	1.00	root		funcs:count(1)->Column#8
+  │ └─TableReader_34	0.00	root		data:Selection_33
+  │   └─Selection_33	0.00	cop[tikv]		in(with_cluster_index.tbl_3.col_16, 2026-10-10 00:00:00.000000, 2032-11-09 00:00:00.000000, 2015-08-02 00:00:00.000000)
+  │     └─TableFullScan_32	839.00	cop[tikv]	table:tbl_3, partition:p0	keep order:false
+  ├─StreamAgg_41	1.00	root		funcs:count(1)->Column#8
+  │ └─TableReader_55	1.01	root		data:Selection_54
+  │   └─Selection_54	1.01	cop[tikv]		in(with_cluster_index.tbl_3.col_16, 2026-10-10 00:00:00.000000, 2032-11-09 00:00:00.000000, 2015-08-02 00:00:00.000000)
+  │     └─TableFullScan_53	872.00	cop[tikv]	table:tbl_3, partition:p1	keep order:false
+  ├─StreamAgg_60	1.00	root		funcs:count(1)->Column#8
+  │ └─TableReader_67	0.00	root		data:Selection_66
+  │   └─Selection_66	0.00	cop[tikv]		in(with_cluster_index.tbl_3.col_16, 2026-10-10 00:00:00.000000, 2032-11-09 00:00:00.000000, 2015-08-02 00:00:00.000000)
+  │     └─TableFullScan_65	867.00	cop[tikv]	table:tbl_3, partition:p2	keep order:false
+  ├─StreamAgg_74	1.00	root		funcs:count(1)->Column#8
+  │ └─TableReader_81	0.00	root		data:Selection_80
+  │   └─Selection_80	0.00	cop[tikv]		in(with_cluster_index.tbl_3.col_16, 2026-10-10 00:00:00.000000, 2032-11-09 00:00:00.000000, 2015-08-02 00:00:00.000000)
+  │     └─TableFullScan_79	856.00	cop[tikv]	table:tbl_3, partition:p3	keep order:false
+  ├─StreamAgg_88	1.00	root		funcs:count(1)->Column#8
+  │ └─TableReader_95	0.00	root		data:Selection_94
+  │   └─Selection_94	0.00	cop[tikv]		in(with_cluster_index.tbl_3.col_16, 2026-10-10 00:00:00.000000, 2032-11-09 00:00:00.000000, 2015-08-02 00:00:00.000000)
+  │     └─TableFullScan_93	796.00	cop[tikv]	table:tbl_3, partition:p4	keep order:false
+  └─StreamAgg_102	1.00	root		funcs:count(1)->Column#8
+    └─TableReader_109	0.00	root		data:Selection_108
+      └─Selection_108	0.00	cop[tikv]		in(with_cluster_index.tbl_3.col_16, 2026-10-10 00:00:00.000000, 2032-11-09 00:00:00.000000, 2015-08-02 00:00:00.000000)
+        └─TableFullScan_107	831.00	cop[tikv]	table:tbl_3, partition:p5	keep order:false
+wout_cluster_index_plan: 
+HashAgg_21	1.00	root		funcs:count(Column#8)->Column#7
+└─PartitionUnion_22	6.00	root		
+  ├─StreamAgg_27	1.00	root		funcs:count(1)->Column#8
+  │ └─TableReader_34	0.00	root		data:Selection_33
+  │   └─Selection_33	0.00	cop[tikv]		in(wout_cluster_index.tbl_3.col_16, 2026-10-10 00:00:00.000000, 2032-11-09 00:00:00.000000, 2015-08-02 00:00:00.000000)
+  │     └─TableFullScan_32	827.00	cop[tikv]	table:tbl_3, partition:p0	keep order:false
+  ├─StreamAgg_41	1.00	root		funcs:count(1)->Column#8
+  │ └─TableReader_48	1.00	root		data:Selection_47
+  │   └─Selection_47	1.00	cop[tikv]		in(wout_cluster_index.tbl_3.col_16, 2026-10-10 00:00:00.000000, 2032-11-09 00:00:00.000000, 2015-08-02 00:00:00.000000)
+  │     └─TableFullScan_46	866.00	cop[tikv]	table:tbl_3, partition:p1	keep order:false
+  ├─StreamAgg_55	1.00	root		funcs:count(1)->Column#8
+  │ └─TableReader_62	0.00	root		data:Selection_61
+  │   └─Selection_61	0.00	cop[tikv]		in(wout_cluster_index.tbl_3.col_16, 2026-10-10 00:00:00.000000, 2032-11-09 00:00:00.000000, 2015-08-02 00:00:00.000000)
+  │     └─TableFullScan_60	853.00	cop[tikv]	table:tbl_3, partition:p2	keep order:false
+  ├─StreamAgg_69	1.00	root		funcs:count(1)->Column#8
+  │ └─TableReader_76	0.00	root		data:Selection_75
+  │   └─Selection_75	0.00	cop[tikv]		in(wout_cluster_index.tbl_3.col_16, 2026-10-10 00:00:00.000000, 2032-11-09 00:00:00.000000, 2015-08-02 00:00:00.000000)
+  │     └─TableFullScan_74	843.00	cop[tikv]	table:tbl_3, partition:p3	keep order:false
+  ├─StreamAgg_83	1.00	root		funcs:count(1)->Column#8
+  │ └─TableReader_90	0.00	root		data:Selection_89
+  │   └─Selection_89	0.00	cop[tikv]		in(wout_cluster_index.tbl_3.col_16, 2026-10-10 00:00:00.000000, 2032-11-09 00:00:00.000000, 2015-08-02 00:00:00.000000)
+  │     └─TableFullScan_88	789.00	cop[tikv]	table:tbl_3, partition:p4	keep order:false
+  └─StreamAgg_97	1.00	root		funcs:count(1)->Column#8
+    └─TableReader_104	0.00	root		data:Selection_103
+      └─Selection_103	0.00	cop[tikv]		in(wout_cluster_index.tbl_3.col_16, 2026-10-10 00:00:00.000000, 2032-11-09 00:00:00.000000, 2015-08-02 00:00:00.000000)
+        └─TableFullScan_102	822.00	cop[tikv]	table:tbl_3, partition:p5	keep order:false
+
+select sum( col_27 ) from tbl_5 where col_76 in ( -1719 , -13264 , 5719 , -8194 )  ;
+Error 1146: Table 'with_cluster_index.tbl_5' doesn't exist
+
+select count(*) from tbl_4 where col_23 < '2030-07-19'  ;
+Performance with cluster index: 
+avg:1105.035590, sum:110503.559000, p80:1124.779000, p90:1144.683000, p95:1238.366000, max:3045.250000, min:0.000000
+Performance wout cluster index: 
+avg:1307.958680, sum:130795.868000, p80:1346.992000, p90:1396.673000, p95:1431.002000, max:1463.645000, min:0.000000
+with_cluster_index_plan: 
+StreamAgg_20	1.00	root		funcs:count(Column#8)->Column#6
+└─TableReader_21	1.00	root		data:StreamAgg_9
+  └─StreamAgg_9	1.00	cop[tikv]		funcs:count(1)->Column#8
+    └─Selection_19	8.00	cop[tikv]		lt(with_cluster_index.tbl_4.col_23, 2030-07-19 00:00:00.000000)
+      └─TableFullScan_18	8.00	cop[tikv]	table:tbl_4	keep order:false
+wout_cluster_index_plan: 
+StreamAgg_20	1.00	root		funcs:count(Column#9)->Column#7
+└─TableReader_21	1.00	root		data:StreamAgg_9
+  └─StreamAgg_9	1.00	cop[tikv]		funcs:count(1)->Column#9
+    └─Selection_19	4.00	cop[tikv]		lt(wout_cluster_index.tbl_4.col_23, 2030-07-19 00:00:00.000000)
+      └─TableFullScan_18	4.00	cop[tikv]	table:tbl_4	keep order:false
+
+select tbl_4.* , tbl_6.col_43 from tbl_4 join tbl_6 on col_20 = col_46 and col_20 = col_46 or col_20 = col_46 ;
+Error 1146: Table 'with_cluster_index.tbl_6' doesn't exist
+
+select tbl_6.* , tbl_1.* from tbl_6 join tbl_1 on col_8 = col_60 and col_60 = col_8 and col_8 = col_60 ;
+Error 1146: Table 'with_cluster_index.tbl_6' doesn't exist
+
+select tbl_6.* , tbl_5.* from tbl_6 right join tbl_5 on col_36 = col_30 and col_30 = col_36 or col_36 = col_30 and col_36 = col_30 ;
+Error 1146: Table 'with_cluster_index.tbl_6' doesn't exist
+
+select tbl_0.* , tbl_6.col_60 from tbl_0 right join tbl_6 on col_4 = col_72 or col_4 = col_72 ;
+Error 1146: Table 'with_cluster_index.tbl_6' doesn't exist
+
+select sum( col_58 ) from tbl_2 where col_78 > 0  ;
+Error 1054: Unknown column 'col_78' in 'where clause'
+
+select tbl_1.col_45, tbl_1.col_5, tbl_1.col_41, tbl_1.col_8, tbl_1.col_9 , tbl_4.* from tbl_1 join tbl_4 on col_20 = col_46 ;
+Error 1054: Unknown column 'col_46' in 'on clause'
+
+select tbl_1.col_45 , tbl_6.* from tbl_1 join tbl_6 on col_81 = col_6 and col_6 = col_81 or col_9 = col_5 ;
+Error 1146: Table 'with_cluster_index.tbl_6' doesn't exist
+
+select tbl_5.col_30, tbl_5.col_76, tbl_5.col_27 , tbl_4.* from tbl_5 left join tbl_4 on col_20 = col_46 or col_20 = col_46 and col_46 = col_20 and col_46 = col_20 and col_20 = col_46 ;
+Error 1146: Table 'with_cluster_index.tbl_5' doesn't exist
+
+select * from tbl_0 where col_72 > 0  ;
+Error 1054: Unknown column 'col_72' in 'where clause'
+
+select tbl_6.col_43, tbl_6.col_60 , tbl_3.col_73, tbl_3.col_79, tbl_3.col_85, tbl_3.col_16 from tbl_6 join tbl_3 ;
+Error 1146: Table 'with_cluster_index.tbl_6' doesn't exist
+
+select tbl_2.col_10, tbl_2.col_11, tbl_2.col_58 , tbl_2.* from tbl_2 join tbl_2 on col_11 = col_11 and col_58 = col_58 and col_14 = col_14 and col_11 = col_11 ;
+Error 1066: Not unique table/alias: 'tbl_2'
+
+select tbl_0.* , tbl_0.col_77, tbl_0.col_4 from tbl_0 left join tbl_0 on col_84 = col_84 ;
+Error 1066: Not unique table/alias: 'tbl_0'
+
+select col_46 from tbl_4 where col_23 in ( '2023-12-29' , '1982-12-17' , '2011-01-21' , '2034-05-06' )  ;
+Error 1054: Unknown column 'col_46' in 'field list'
+
+select col_28,col_26,col_76,col_30,col_27,col_29 from tbl_5 where col_28 in ( 'wnrtwFSuy' )  ;
+Error 1146: Table 'with_cluster_index.tbl_5' doesn't exist
+
+select count(*) from tbl_6 where col_60 != ''  ;
+Error 1146: Table 'with_cluster_index.tbl_6' doesn't exist
+
+select tbl_6.* , tbl_4.col_21, tbl_4.col_86 from tbl_6 right join tbl_4 on col_46 = col_20 or col_46 = col_20 and col_46 = col_20 or col_20 = col_46 or col_46 = col_20 ;
+Error 1146: Table 'with_cluster_index.tbl_6' doesn't exist
+
+select count(*) from tbl_6 where col_43 >= 'David'  ;
+Error 1146: Table 'with_cluster_index.tbl_6' doesn't exist
+
+select count(*) from tbl_1 where col_8 in ( 'ypYWktBtQAwU' , 'eWlYFyWNGmWNeaah' )  ;
+Performance with cluster index: 
+avg:3017.840000, sum:301784.000000, p80:3105.162000, p90:3190.637000, p95:3259.611000, max:5174.316000, min:0.000000
+Performance wout cluster index: 
+avg:4159.273220, sum:415927.322000, p80:4265.195000, p90:4371.229000, p95:4462.314000, max:4900.900000, min:0.000000
+with_cluster_index_plan: 
+StreamAgg_20	1.00	root		funcs:count(Column#8)->Column#6
+└─TableReader_21	1.00	root		data:StreamAgg_9
+  └─StreamAgg_9	1.00	cop[tikv]		funcs:count(1)->Column#8
+    └─Selection_19	2.00	cop[tikv]		in(with_cluster_index.tbl_1.col_8, "ypYWktBtQAwU", "eWlYFyWNGmWNeaah")
+      └─TableFullScan_18	4998.00	cop[tikv]	table:tbl_1	keep order:false
+wout_cluster_index_plan: 
+StreamAgg_20	1.00	root		funcs:count(Column#9)->Column#7
+└─TableReader_21	1.00	root		data:StreamAgg_9
+  └─StreamAgg_9	1.00	cop[tikv]		funcs:count(1)->Column#9
+    └─Selection_19	2.00	cop[tikv]		in(wout_cluster_index.tbl_1.col_8, "ypYWktBtQAwU", "eWlYFyWNGmWNeaah")
+      └─TableFullScan_18	4998.00	cop[tikv]	table:tbl_1	keep order:false
+
+select col_86,col_87,col_23,col_46 from tbl_4 where col_46 in ( 0 , 0 , 1322381024 , 0 )  ;
+Error 1054: Unknown column 'col_46' in 'where clause'
+
+select tbl_0.col_84, tbl_0.col_4, tbl_0.col_77 , tbl_5.col_76, tbl_5.col_28, tbl_5.col_30, tbl_5.col_26 from tbl_0 right join tbl_5 on col_4 = col_72 ;
+Error 1146: Table 'with_cluster_index.tbl_5' doesn't exist
+
+select tbl_4.col_21, tbl_4.col_87 , tbl_1.* from tbl_4 join tbl_1 on col_7 = col_23 or col_9 = col_5 ;
+Error 1054: Unknown column 'tbl_4.col_87' in 'field list'
+
+select sum( col_73 ) from tbl_3 where col_85 in ( 0 )  ;
+Error 1054: Unknown column 'col_85' in 'where clause'
+
+select tbl_1.col_89 , tbl_4.col_87, tbl_4.col_96 from tbl_1 right join tbl_4 on col_81 = col_6 ;
+Error 1054: Unknown column 'col_81' in 'on clause'
+
+select sum( col_58 ) from tbl_2 where col_12 != 'm'  ;
+Error 1054: Unknown column 'col_58' in 'where clause'
+
+select tbl_5.* , tbl_0.* from tbl_5 left join tbl_0 on col_4 = col_72 ;
+Error 1146: Table 'with_cluster_index.tbl_5' doesn't exist
+
+select tbl_1.col_8, tbl_1.col_41, tbl_1.col_9, tbl_1.col_7, tbl_1.col_6 , tbl_1.col_7, tbl_1.col_94 from tbl_1 left join tbl_1 on col_8 = col_8 ;
+Error 1066: Not unique table/alias: 'tbl_1'
+
+select col_100,col_85 from tbl_3 where col_100 in ( 0 , 0 )  ;
+Error 1054: Unknown column 'col_100' in 'where clause'
+
+select tbl_2.col_78 , tbl_3.* from tbl_2 join tbl_3 ;
+Error 1054: Unknown column 'tbl_2.col_78' in 'field list'
+
+select tbl_3.* , tbl_5.col_28, tbl_5.col_102 from tbl_3 join tbl_5 ;
+Error 1146: Table 'with_cluster_index.tbl_5' doesn't exist
+
+select sum( col_20 ) from tbl_4 where col_87 <> 0  ;
+Error 1054: Unknown column 'col_87' in 'where clause'
+
+select tbl_6.* , tbl_0.* from tbl_6 right join tbl_0 on col_103 = col_59 ;
+Error 1146: Table 'with_cluster_index.tbl_6' doesn't exist
+
+select tbl_3.col_85, tbl_3.col_73 , tbl_4.col_86, tbl_4.col_104, tbl_4.col_20 from tbl_3 left join tbl_4 on col_96 = col_104 and col_46 = col_20 and col_96 = col_104 ;
+Error 1054: Unknown column 'col_96' in 'on clause'
+
+select tbl_0.col_59, tbl_0.col_4 , tbl_3.col_73, tbl_3.col_85 from tbl_0 left join tbl_3 on col_103 = col_59 ;
+Error 1054: Unknown column 'col_103' in 'on clause'
+
+select tbl_3.* , tbl_0.col_77 from tbl_3 right join tbl_0 on col_4 = col_72 ;
+Error 1054: Unknown column 'col_72' in 'on clause'
+
+select tbl_5.* , tbl_3.* from tbl_5 join tbl_3 ;
+Error 1146: Table 'with_cluster_index.tbl_5' doesn't exist

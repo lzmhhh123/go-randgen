@@ -155,7 +155,16 @@ func TestPerformance(t *testing.T) {
 			queryData[i-state.ctrl.InitTableCount*(state.ctrl.InitRowCount+2)] = sql
 		}
 	}
-	err := initDB("with_cluster_index", prepareData, state.ctrl, true)
+	f, err := os.OpenFile("prepare_sql.sql", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+	for _, sql := range prepareData {
+		f.Write([]byte(sql + ";\n"))
+	}
+	f.Close()
+	err = initDB("with_cluster_index", prepareData, state.ctrl, true)
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
@@ -165,7 +174,7 @@ func TestPerformance(t *testing.T) {
 		t.Error(err)
 		t.FailNow()
 	}
-	f, err := os.OpenFile("query_sql.sql", os.O_RDWR|os.O_CREATE, 0666)
+	f, err = os.OpenFile("query_sql.sql", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
@@ -185,7 +194,7 @@ func TestPerformance(t *testing.T) {
 		t.Error(err)
 		t.FailNow()
 	}
-	f, err = os.OpenFile("results.sql", os.O_RDWR|os.O_CREATE, 0666)
+	f, err = os.OpenFile("results", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
@@ -195,45 +204,39 @@ func TestPerformance(t *testing.T) {
 	for _, data := range queryData {
 		fmt.Println("test query: " + data)
 		f.Write([]byte("\n"+data + ";\n"))
-		hasError := false
-		for i := 0; i < 100; i++ {
-			avg, sum, p80, p90, p95, max, min, err := getQueryPerformance(data, connWith)
-			if err != nil {
-				f.Write([]byte("with_cluster_index_ERROR: " + err.Error()))
-				hasError = true
-				break
-			}
-			f.Write([]byte(fmt.Sprintf("Performance with cluster index: \navg:%f, sum:%f, p80:%f, p90:%f, p95:%f, max:%f, min:%f", avg, sum, p80, p90, p95, max, min)))
-			avg, sum, p80, p90, p95, max, min, err = getQueryPerformance(data, connWout)
-			if err != nil {
-				f.Write([]byte("wout_cluster_index_ERROR: " + err.Error()))
-				hasError = true
-				break
-			}
-			f.Write([]byte(fmt.Sprintf("Performance wout cluster index: \navg:%f, sum:%f, p80:%f, p90:%f, p95:%f, max:%f, min:%f", avg, sum, p80, p90, p95, max, min)))
-		}
-		if hasError {
+
+		avg, sum, p80, p90, p95, max, min, err := getQueryPerformance(data, connWith)
+		if err != nil {
+			f.Write([]byte(err.Error() + "\n"))
 			continue
 		}
-		rows, err := connWith.Query("explain" + data)
+		f.Write([]byte(fmt.Sprintf("Performance with cluster index: \navg:%f, sum:%f, p80:%f, p90:%f, p95:%f, max:%f, min:%f\n", avg, sum, p80, p90, p95, max, min)))
+		avg, sum, p80, p90, p95, max, min, err = getQueryPerformance(data, connWout)
 		if err != nil {
-			f.Write([]byte("with_cluster_index_ERROR: " + err.Error()))
+			f.Write([]byte(err.Error() + "\n"))
+			continue
+		}
+		f.Write([]byte(fmt.Sprintf("Performance wout cluster index: \navg:%f, sum:%f, p80:%f, p90:%f, p95:%f, max:%f, min:%f\n", avg, sum, p80, p90, p95, max, min)))
+
+		rows, err := connWith.Query("explain " + data)
+		if err != nil {
+			f.Write([]byte(err.Error() + "\n"))
 			continue
 		}
 		res, err := parseRes(rows)
 		if err != nil {
-			f.Write([]byte("with_cluster_index_ERROR: " + err.Error()))
+			f.Write([]byte(err.Error() + "\n"))
 			continue
 		}
 		f.Write([]byte("with_cluster_index_plan: \n" + res))
-		rows, err = connWout.Query("explain" + data)
+		rows, err = connWout.Query("explain " + data)
 		if err != nil {
-			f.Write([]byte("wout_cluster_index_ERROR: " + err.Error()))
+			f.Write([]byte(err.Error() + "\n"))
 			continue
 		}
 		res, err = parseRes(rows)
 		if err != nil {
-			f.Write([]byte("wout_cluster_index_ERROR: " + err.Error()))
+			f.Write([]byte(err.Error() + "\n"))
 			continue
 		}
 		f.Write([]byte("wout_cluster_index_plan: \n" + res))
