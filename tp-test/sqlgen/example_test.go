@@ -232,7 +232,7 @@ func TestPerformance(t *testing.T) {
 		}
 		f.Write([]byte(fmt.Sprintf("Performance wout cluster index: \navg:%f, sum:%f, p80:%f, p90:%f, p95:%f, max:%f, min:%f\n", avg, sum, p80, p90, p95, max, min)))
 
-		rows, err := connWith.Query("explain " + data)
+		rows, err := connWith.Query("explain analyze " + data)
 		if err != nil {
 			f.Write([]byte(err.Error() + "\n"))
 			continue
@@ -243,7 +243,7 @@ func TestPerformance(t *testing.T) {
 			continue
 		}
 		f.Write([]byte("with_cluster_index_plan: \n" + res))
-		rows, err = connWout.Query("explain " + data)
+		rows, err = connWout.Query("explain analyze " + data)
 		if err != nil {
 			f.Write([]byte(err.Error() + "\n"))
 			continue
