@@ -109,6 +109,7 @@ func parseRes(rows *sql.Rows) (string, error) {
 
 func getQueryPerformance(sql string, conn *sql.DB) (avg, sum, p80, p90, p95, max, min float64, err error) {
 	t := make([]time.Duration, 100)
+	min = math.MaxFloat64
 	bar := progressbar.Default(100)
 	for i := 0; i < 100; i++ {
 		start := time.Now()
@@ -137,18 +138,12 @@ func TestPerformance(t *testing.T) {
 	state.InjectTodoSQL("drop table if exists tbl_3")
 	state.InjectTodoSQL("drop table if exists tbl_4")
 	state.ctrl.InitRowCount = 5000
-	queryCnt := 100
+	queryCnt := 1000
 	gen := NewGenerator(state)
 	prepareData := make([]string, state.ctrl.InitTableCount*(state.ctrl.InitRowCount+2))
 	queryData := make([]string, queryCnt)
-	for i := 0; i < state.ctrl.InitTableCount*(state.ctrl.InitRowCount+2)+queryCnt; i++ {
+	for i := 0; i < state.ctrl.InitTableCount*(state.ctrl.InitRowCount+2); i++ {
 		sql := gen()
-		if i >= state.ctrl.InitTableCount*(state.ctrl.InitRowCount+2) &&
-			(sql[:len("select")] != "select" ||
-				sql[len(sql)-len("for update "):] == "for update ") {
-			i--
-			continue
-		}
 		if i < state.ctrl.InitTableCount*(state.ctrl.InitRowCount+2) {
 			prepareData[i] = sql
 		} else {
@@ -164,6 +159,7 @@ func TestPerformance(t *testing.T) {
 		f.Write([]byte(sql + ";\n"))
 	}
 	f.Close()
+	fmt.Println("init database")
 	err = initDB("with_cluster_index", prepareData, state.ctrl, true)
 	if err != nil {
 		t.Error(err)
@@ -174,16 +170,6 @@ func TestPerformance(t *testing.T) {
 		t.Error(err)
 		t.FailNow()
 	}
-	f, err = os.OpenFile("query_sql.sql", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
-	if err != nil {
-		t.Error(err)
-		t.FailNow()
-	}
-	for _, sql := range queryData {
-		f.Write([]byte(sql + ";\n"))
-	}
-	f.Close()
-
 	connWith, err := sql.Open("mysql", "root:@tcp(127.0.0.1:4000)/with_cluster_index")
 	if err != nil {
 		t.Error(err)
@@ -194,6 +180,34 @@ func TestPerformance(t *testing.T) {
 		t.Error(err)
 		t.FailNow()
 	}
+	fmt.Println("generate query")
+	bar := progressbar.Default(int64(queryCnt))
+	for i := 0; i < queryCnt; i++ {
+		sql := gen()
+		if sql[:len("select")] != "select" {
+			i--
+			continue
+		}
+		if sql[len(sql)-len("for update "):] == "for update " {
+			sql = sql[:len(sql)-len("for update ")]
+		}
+		_, err = connWout.Exec("explain " + sql)
+		if err != nil {
+			i--
+			continue
+		}
+		queryData[i] = sql
+		bar.Add(1)
+	}
+	f, err = os.OpenFile("query_sql.sql", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+	for _, sql := range queryData {
+		f.Write([]byte(sql + ";\n"))
+	}
+	f.Close()
 	f, err = os.OpenFile("results", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
 	if err != nil {
 		t.Error(err)
